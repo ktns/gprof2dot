@@ -2768,12 +2768,14 @@ class Theme:
         return self.fontsize(weight)
 
     def edge_penwidth(self, weight):
+        weight = min(weight, 1.0)
         return max(weight*self.maxpenwidth, self.minpenwidth)
 
     def edge_arrowsize(self, weight):
         return 0.5 * math.sqrt(self.edge_penwidth(weight))
 
     def fontsize(self, weight):
+        weight = min(weight, 1.0)
         return max(weight**2 * self.maxfontsize, self.minfontsize)
 
     def color(self, weight):
