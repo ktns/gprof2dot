@@ -17,6 +17,7 @@
 #
 
 
+import difflib
 import optparse
 import os.path
 import sys
@@ -25,10 +26,10 @@ import shutil
 
 
 formats = [
-    "aqtime",
     "axe",
     "callgrind",
     "hprof",
+    "json",
     "oprofile",
     "perf",
     "prof",
@@ -51,12 +52,19 @@ def run(cmd):
         raise
 
 
+def diff(a, b):
+    a_lines = open(a, 'rt').readlines()
+    b_lines = open(b, 'rt').readlines()
+    diff_lines = difflib.unified_diff(a_lines, b_lines, fromfile=a, tofile=b)
+    sys.stdout.write(''.join(diff_lines))
+
+
 def main():
     """Main program."""
 
     global formats
 
-    test_dir = os.path.dirname(__file__)
+    test_dir = os.path.dirname(os.path.abspath(__file__))
 
     optparser = optparse.OptionParser(
         usage="\n\t%prog [options] [format] ...")
@@ -79,17 +87,18 @@ def main():
         formats = args
 
     for format in formats:
-        for filename in os.listdir(test_dir):
+        test_subdir = os.path.join(test_dir, format)
+        for filename in os.listdir(test_subdir):
             name, ext = os.path.splitext(filename)
             if ext == '.' + format:
                 sys.stdout.write(filename + '\n')
 
-                profile = os.path.join(test_dir, filename)
-                dot = os.path.join(test_dir, name + '.dot')
-                png = os.path.join(test_dir, name + '.png')
+                profile = os.path.join(test_subdir, filename)
+                dot = os.path.join(test_subdir, name + '.dot')
+                png = os.path.join(test_subdir, name + '.png')
                 
-                ref_dot = os.path.join(test_dir, name + '.orig.dot')
-                ref_png = os.path.join(test_dir, name + '.orig.png')
+                ref_dot = os.path.join(test_subdir, name + '.orig.dot')
+                ref_png = os.path.join(test_subdir, name + '.orig.png')
 
                 if run([ options.python, options.gprof2dot, '-f', format, '-o', dot, profile]) != 0:
                     continue
@@ -101,7 +110,7 @@ def main():
                     shutil.copy(dot, ref_dot)
                     shutil.copy(png, ref_png)
                 else:
-                    run(['diff', ref_dot, dot])
+                    diff(ref_dot, dot)
 
 
 if __name__ == '__main__':
